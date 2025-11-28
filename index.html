@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ROTAS — Year Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --accent:#06b6d4;
+      --accent-2:#7c3aed;
+      --today:#fff7ed;
+      --day_shift: #ecfd03;
+      --night_shift: #0e4e92;
+      --holiday: #34d399;
+      --border: #e6e9ef;
+      --radius: 12px;
+      font-family: Inter, system-ui;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      padding:16px;
+      background:var(--bg);
+      color:#0f172a;
+      overflow:auto;
+    }
+
+    /* HEADER LAYOUT */
+    .app-header{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      margin-bottom:10px;
+    }
+
+    .teams-row,
+    .controls-row{
+      display:flex;
+      flex-direction:row;
+      align-items:center;
+      gap:10px;
+      white-space:nowrap;
+      flex-wrap:nowrap;
+      overflow-x:auto;
+    }
+
+    .teams-row::-webkit-scrollbar,
+    .controls-row::-webkit-scrollbar{
+      display:none;
+    }
+
+    /* Segmented Buttons */
+    .seg-group{
+      display:flex;
+      flex-shrink:0;
+    }
+
+    .segmented{
+      display:inline-flex;
+      gap:4px;
+      background:var(--card);
+      border-radius:999px;
+      padding:4px;
+      border:1px solid var(--border);
+      flex-shrink:0;
+    }
+
+    .segmented button{
+      border:0;
+      background:transparent;
+      padding:8px 12px;
+      border-radius:8px;
+      font-size:13px;
+      font-weight:600;
+      color:var(--muted);
+      cursor:pointer;
+      white-space:nowrap;
+    }
+
+    .segmented button[aria-pressed="true"]{
+      background:linear-gradient(180deg, rgba(6,182,212,0.12), rgba(124,58,237,0.06));
+      color:var(--accent-2);
+    }
+
+    .btn{
+      background:var(--card);
+      border:1px solid var(--border);
+      padding:7px 12px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:13px;
+      white-space:nowrap;
+      flex-shrink:0;
+    }
+
+    input[type="number"]{
+      width:80px;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:var(--card);
+      font-size:14px;
+      flex-shrink:0;
+    }
+
+    /* YEAR GRID */
+    .year-grid{
+      margin-top:10px;
+      display:grid;
+      grid-template-columns:1fr;
+      gap:12px;
+    }
+
+    @media (min-width:520px){ .year-grid{ grid-template-columns:repeat(2,1fr); } }
+    @media (min-width:760px){ .year-grid{ grid-template-columns:repeat(3,1fr); } }
+    @media (min-width:1024px){ .year-grid{ grid-template-columns:repeat(4,1fr); } }
+
+    .month-card{
+      background:var(--card);
+      border-radius:var(--radius);
+      border:1px solid var(--border);
+      padding:10px;
+    }
+
+    .month-title{
+      font-weight:700;
+      font-size:13px;
+    }
+
+    table.calendar{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      font-size:12px;
+    }
+
+    .calendar thead th{
+      text-align:right;
+      padding:6px 4px;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .calendar tbody td{
+      height:30px;
+      padding:3px;
+      text-align:right;
+    }
+
+    .date{
+      display:inline-block;
+      min-width:24px;
+      text-align:center;
+      padding:4px;
+      border-radius:6px;
+      font-size:11px;
+    }
+
+    .day_shift{ background:var(--day_shift); font-weight:700; }
+    .night_shift{ background:var(--night_shift); color:#fff; font-weight:700; }
+    .holiday{ background:var(--holiday); font-weight:700; }
+  </style>
+</head>
+
+<body>
+
+  <header class="app-header">
+
+    <!-- FIRST ROW: TEAM BUTTONS -->
+    <div class="teams-row">
+      <div class="seg-group">
+        <div class="segmented" role="radiogroup">
+          <button id="team1Btn" aria-pressed="true">WOJTEK</button>
+          <button id="team2Btn" aria-pressed="false">BEN</button>
+          <button id="team3Btn" aria-pressed="false">MARK</button>
+          <button id="team4Btn" aria-pressed="false">ADAM</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECOND ROW: YEAR CONTROLS -->
+    <div class="controls-row">
+      <button id="resetBtn" class="btn">Reset</button>
+      <button id="prevYear" class="btn">◀</button>
+      <input id="yearInput" type="number" min="1" max="9999" />
+      <button id="nextYear" class="btn">▶</button>
+    </div>
+
+  </header>
+
+  <main>
+    <div id="calendarContainer" class="year-grid"></div>
+  </main>
+
+<script>
+(function(){
+  const yearInput = document.getElementById('yearInput');
+  const calendarContainer = document.getElementById('calendarContainer');
+  const prevBtn = document.getElementById('prevYear');
+  const nextBtn = document.getElementById('nextYear');
+  const resetBtn = document.getElementById('resetBtn');
+
+  const teamBtns = Array.from(document.querySelectorAll('.segmented:first-of-type button'));
+
+  const SHIFT_PATTERN = [0,0,1,1,0,0,1,1,1,0,0,1,1,0,0,0,2,2,0,0,2,2,2,0,0,2,2,0];
+  const TEAM_OFFSETS = { team1:22, team2:8, team3:1, team4:15 };
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const WEEKDAY_NAMES_MON = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+
+  const today = new Date();
+  let currentYear = today.getFullYear();
+  let start_index = TEAM_OFFSETS.team1;
+  yearInput.value = currentYear;
+
+  prevBtn.addEventListener('click', ()=> changeYear(-1));
+  nextBtn.addEventListener('click', ()=> changeYear(1));
+  resetBtn.addEventListener('click', ()=> reset());
+  yearInput.addEventListener('keydown', e=>{ if(e.key==="Enter") setYearFromInput(); });
+
+  teamBtns.forEach((btn,i)=>{
+    btn.addEventListener('click', ()=>{
+      teamBtns.forEach(b=>b.setAttribute('aria-pressed','false'));
+      btn.setAttribute('aria-pressed','true');
+      start_index = Object.values(TEAM_OFFSETS)[i];
+      renderYear(currentYear);
+    });
+  });
+
+  function changeYear(d){
+    currentYear += d;
+    yearInput.value = currentYear;
+    renderYear(currentYear);
+  }
+
+  function setYearFromInput(){
+    const y = Number(yearInput.value);
+    if(y < 1 || y > 9999){ alert("Invalid year."); return; }
+    currentYear = y;
+    renderYear(y);
+  }
+
+  function reset(){
+    currentYear = today.getFullYear();
+    yearInput.value = currentYear;
+    renderYear(currentYear);
+  }
+
+  /* Leap year helpers */
+  function Number_Of_Leap_Years(year){
+    let nLY = 0;
+    if (year >= 2100){
+      let dif = year - 2100 - 1;
+      nLY = 19 + Math.floor(dif/4) - Math.floor(dif/100) + Math.floor(dif/400);
+    } else if (year >= 2024 && year < 2100){
+      let dif = year - 2024 - 1;
+      nLY = 1 + Math.floor(dif/4);
+    } else if (year < 2024 && year > 1900){
+      let dif = Math.abs(year - 2024);
+      nLY = Math.floor(dif/4);
+    } else if (year <= 1900){
+      let dif = Math.abs(year - 1900);
+      nLY = 30 + Math.floor(dif/4) - Math.floor(dif/100) + Math.floor(dif/400);
+    }
+    return nLY;
+  }
+
+  function Number_of_Days(year, leap){
+    return (365 * Math.abs(year - 2024)) + leap;
+  }
+
+  function Find_New_Shift_Index(start, year, days, len){
+    if(year === 2024) return start;
+    let idx = (start + 1) % len;
+    if(year > 2024){
+      let newi = (days % len);
+      newi = (idx + newi) % len;
+      return (newi - 1 + len) % len;
+    }
+    else{
+      let newi = (days % len);
+      if(newi >= idx) newi = (idx - newi) + len;
+      else newi = idx - newi;
+      return (newi - 1 + len) % len;
+    }
+  }
+
+  renderYear(currentYear);
+
+  function renderYear(year){
+    calendarContainer.innerHTML = "";
+    const stored_start = start_index;
+
+    const leaps = Number_Of_Leap_Years(year);
+    const ndays = Number_of_Days(year, leaps);
+    start_index = Find_New_Shift_Index(start_index, year, ndays, SHIFT_PATTERN.length);
+
+    for(let m=0;m<12;m++){
+      const card = document.createElement("section");
+      card.className="month-card";
+
+      const title = document.createElement("div");
+      title.className="month-title";
+      title.textContent = MONTH_NAMES[m] + " " + year;
+
+      const table = document.createElement("table");
+      table.className = "calendar";
+
+      const thead = document.createElement("thead");
+      const trh = document.createElement("tr");
+      WEEKDAY_NAMES_MON.forEach(d=>{
+        const th = document.createElement("th");
+        th.textContent=d;
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+
+      const tbody = document.createElement("tbody");
+
+      const first = new Date(year,m,1);
+      const last = new Date(year,m+1,0);
+      const daysInMonth = last.getDate();
+      const rawFirst = first.getDay();
+      const firstIndex = rawFirst===0 ? 6 : rawFirst-1;
+
+      let day=1;
+      while(day<=daysInMonth){
+        const tr = document.createElement("tr");
+        for(let c=0;c<7;c++){
+          const td = document.createElement("td");
+          if(tbody.children.length===0 && c<firstIndex || day>daysInMonth){
+            tr.appendChild(td);
+            continue;
+          }
+
+          const sp = document.createElement("span");
+          sp.className="date";
+          sp.textContent=day;
+
+          if(SHIFT_PATTERN[start_index]===1) sp.classList.add("day_shift");
+          if(SHIFT_PATTERN[start_index]===2) sp.classList.add("night_shift");
+
+          start_index = (start_index+1) % SHIFT_PATTERN.length;
+
+          td.appendChild(sp);
+
+          td.addEventListener("click",()=>{
+            if(sp.classList.contains("holiday")){
+              if(confirm("Remove holiday?")) sp.classList.remove("holiday");
+            } else {
+              if(confirm("Mark holiday?")) sp.classList.add("holiday");
+            }
+          });
+
+          tr.appendChild(td);
+          day++;
+        }
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(thead);
+      table.appendChild(tbody);
+
+      card.appendChild(title);
+      card.appendChild(table);
+
+      calendarContainer.appendChild(card);
+    }
+
+    start_index = stored_start;
+  }
+
+})();
+</script>
+
+</body>
+</html>
