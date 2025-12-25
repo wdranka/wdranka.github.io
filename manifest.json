@@ -1,7 +1,8 @@
 {
   "name": "ROTAS",
   "short_name": "ROTAS",
-  "start_url": ".",
+  "start_url": "./",
+  "scope":"./",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
