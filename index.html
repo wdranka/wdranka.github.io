@@ -1,21 +1,18 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ROTAS</title>
 
-  <!-- PWA META -->
+<!-- PWA META -->
 <meta name="theme-color" content="#020617">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ROTAS">
-
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
-
- <!-- PWA META END-->
-
+<!-- PWA META END -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,6 +23,8 @@
   --bg: radial-gradient(1200px 600px at top, #0f172a, #020617);
   --card: rgba(255,255,255,0.08);
   --muted:#94a3b8;
+  --text:#e5e7eb;
+
   --accent:#22d3ee;
   --accent-2:#a78bfa;
 
@@ -38,13 +37,27 @@
   font-family: Inter, system-ui;
 }
 
+/* ===== SEPIA THEME ===== */
+html[data-theme="sepia"]{
+  --bg: radial-gradient(1200px 600px at top, #f5efe6, #e8dcc8);
+  --card: rgba(255,255,255,0.75);
+  --muted:#6b5e4a;
+  --text:#3b2f1e;
+
+  --accent:#c0841a;
+  --accent-2:#e0b34a;
+
+  --border: rgba(0,0,0,0.15);
+}
+
 *{ box-sizing:border-box; }
 
 body{
   margin:0;
   padding:14px;
   background:var(--bg);
-  color:#e5e7eb;
+  color:var(--text);
+  transition: background .4s ease, color .4s ease;
 }
 
 /* HEADER */
@@ -62,6 +75,14 @@ body{
     rgba(2,6,23,0.55)
   );
   padding-bottom:10px;
+}
+
+html[data-theme="sepia"] .app-header{
+  background: linear-gradient(
+    to bottom,
+    rgba(245,239,230,.9),
+    rgba(245,239,230,.6)
+  );
 }
 
 .teams-row,
@@ -94,13 +115,11 @@ body{
   font-weight:700;
   color:var(--muted);
   cursor:pointer;
-  transition:.25s;
 }
 
 .segmented button[aria-pressed="true"]{
   background:linear-gradient(135deg,var(--accent),var(--accent-2));
   color:#020617;
-  box-shadow:0 8px 24px rgba(0,0,0,.4);
 }
 
 /* BUTTONS */
@@ -108,17 +127,14 @@ body{
 input[type="number"]{
   background:var(--card);
   border:1px solid var(--border);
-  color:#e5e7eb;
+  color:var(--text);
   padding:10px 14px;
   border-radius:12px;
   font-size:14px;
   font-weight:600;
-  backdrop-filter: blur(10px);
 }
 
-.btn:active{
-  transform:scale(.96);
-}
+.btn:active{ transform:scale(.96); }
 
 input[type="number"]{
   width:90px;
@@ -177,7 +193,7 @@ input[type="number"]{
   text-align:center;
 }
 
-/* DATE PILL */
+/* DATE */
 .date{
   display:flex;
   align-items:center;
@@ -187,29 +203,12 @@ input[type="number"]{
   border-radius:999px;
   font-size:11px;
   font-weight:700;
-  transition:.2s;
 }
 
-.date:active{ transform:scale(.9); }
+.day_shift{ background:var(--day_shift); color:#1f2933; }
+.night_shift{ background:var(--night_shift); color:#fff; }
+.holiday{ background:var(--holiday); color:#022c22; }
 
-.day_shift{
-  background:var(--day_shift);
-  color:#1f2933;
-}
-
-.night_shift{
-  background:var(--night_shift);
-  color:#fff;
-  box-shadow:0 0 12px rgba(37,99,235,.45);
-}
-
-.holiday{
-  background:var(--holiday);
-  color:#022c22;
-  box-shadow:0 0 14px rgba(52,211,153,.45);
-}
-
-/* ANIMATION */
 @keyframes fadeUp{
   from{ opacity:0; transform:translateY(10px); }
   to{ opacity:1; transform:none; }
@@ -230,6 +229,7 @@ input[type="number"]{
   </div>
 
   <div class="controls-row">
+    <button id="themeToggle" class="btn">🌙 Dark</button>
     <button id="resetBtn" class="btn">Reset</button>
     <button id="prevYear" class="btn">◀</button>
     <input id="yearInput" type="number" />
@@ -242,7 +242,25 @@ input[type="number"]{
 </main>
 
 <script>
-(function(){
+/* ========= THEME SWITCH ========= */
+const themeBtn = document.getElementById("themeToggle");
+const root = document.documentElement;
+
+function setTheme(theme){
+  root.setAttribute("data-theme", theme);
+  localStorage.setItem("theme", theme);
+  themeBtn.textContent = theme === "dark" ? "🌙 Dark" : "☀️ Light";
+}
+
+setTheme(localStorage.getItem("theme") || "dark");
+
+themeBtn.onclick = () => {
+  setTheme(root.getAttribute("data-theme") === "dark" ? "sepia" : "dark");
+};
+</script>
+
+<script>
+
   const yearInput = document.getElementById('yearInput');
   const calendarContainer = document.getElementById('calendarContainer');
   const prevBtn = document.getElementById('prevYear');
@@ -375,10 +393,10 @@ input[type="number"]{
     }
     start_index=stored;
   }
-})();
+;
 </script>
 <!-- script for registering Service Worker -->
-  <script>
+<script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js');
