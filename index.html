@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
@@ -232,7 +233,7 @@ input[type="number"]{
     <button id="themeToggle" class="btn">🌙 Dark</button>
     <button id="resetBtn" class="btn">Reset</button>
     <button id="prevYear" class="btn">◀</button>
-    <input id="yearInput" type="number" />
+    <input id="yearInput" type="number" min="1" max="9999" />
     <button id="nextYear" class="btn">▶</button>
   </div>
 </header>
@@ -281,7 +282,15 @@ themeBtn.onclick = () => {
 
   prevBtn.onclick = ()=> changeYear(-1);
   nextBtn.onclick = ()=> changeYear(1);
-  function setYearFromInput(){ const v = Number(yearInput.value); if (!Number.isInteger(v)){ return; } currentYear=v; renderYear(currentYear); }
+  function setYearFromInput(){
+    const v = Number(yearInput.value);
+    if (!Number.isInteger(v) || v < 1 || v > 9999) {
+      yearInput.value = currentYear;
+      return;
+    }
+    currentYear = v;
+    renderYear(currentYear);
+  }
       yearInput.addEventListener('keydown', (e)=>{ if (e.key === 'Enter') setYearFromInput(); });
 
 
@@ -298,13 +307,10 @@ themeBtn.onclick = () => {
   });
 
   function changeYear(d){
-    currentYear+=d;
-    yearInput.value=currentYear;
-    renderYear(currentYear);
-  }
-
-  function setYearFromInput(){
-    currentYear=+yearInput.value;
+    const newYear = currentYear + d;
+    if (newYear < 1 || newYear > 9999) return;
+    currentYear = newYear;
+    yearInput.value = currentYear;
     renderYear(currentYear);
   }
 
@@ -333,7 +339,7 @@ themeBtn.onclick = () => {
     const stored=start_index;
 
     const leaps=Number_Of_Leap_Years(year);
-    const days=(365*Math.abs(year-2024))+leaps;
+    const days = 365 * Math.abs(year - 2024) + Math.abs(leaps);
     start_index=Find_New_Shift_Index(start_index,year,days,SHIFT_PATTERN.length);
 
     for(let m=0;m<12;m++){
